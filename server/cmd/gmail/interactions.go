@@ -10,7 +10,6 @@ import (
 
 type MessageObj struct {
 	Id string `json:"id"`
-	// ThreadId string `json:"threadId`
 }
 
 type ApiResp struct {

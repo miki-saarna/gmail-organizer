@@ -69,7 +69,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Main() {
+func Main(senderAddress string) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -102,7 +102,5 @@ func Main() {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
-	randomEmail := "unknown@gmail.com"
-
-	ListMessagesFromSender(client, randomEmail)
+	ListMessagesFromSender(client, senderAddress)
 }

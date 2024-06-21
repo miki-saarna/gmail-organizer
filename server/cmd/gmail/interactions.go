@@ -23,14 +23,14 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		errMessage := fmt.Errorf("Error creating GET request for URL \"%v\": %v", url, err.Error())
+		errMessage := fmt.Errorf("error creating get request for url \"%v\": %v", url, err.Error())
 		fmt.Println(errMessage)
 		return nil, errMessage
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		errMessage := fmt.Errorf("Error executing GET request for URL \"%v\": %v", url, err.Error())
+		errMessage := fmt.Errorf("error executing get request for url \"%v\": %v", url, err.Error())
 		fmt.Println(errMessage)
 		return nil, errMessage
 	}
@@ -40,12 +40,12 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
     body, _ := io.ReadAll(resp.Body)
     errMessage := fmt.Errorf("HTTP status: %v\nResponse body: %v", resp.Status, string(body))
 		fmt.Println(errMessage)
-    return nil, fmt.Errorf("HTTP status %v for URL %v", resp.Status, url)
+    return nil, fmt.Errorf("HTTP status %v for url %v", resp.Status, url)
 }
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errMessage := fmt.Errorf("Error reading response body for URL %v: %v", url, err.Error())
+		errMessage := fmt.Errorf("error reading response body for url %v: %v", url, err.Error())
 		fmt.Println(errMessage)
 		return nil, errMessage
 	}
@@ -54,13 +54,11 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
 
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
-		errMessage := fmt.Errorf("Error unmarshalling JSON response for URL %v: %v", url, err.Error())
+		errMessage := fmt.Errorf("error unmarshalling JSON response for url %v: %v", url, err.Error())
 		fmt.Println(errMessage)
 		return nil, errMessage
 	}
 
 	fmt.Printf("apiResp: %v", len(apiResp.Messages))
 	return apiResp.Messages, nil
-
-
 }

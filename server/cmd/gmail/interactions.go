@@ -16,6 +16,10 @@ type ApiResp struct {
 	Messages []MessageObj `json:"messages"`
 }
 
+type TrashApiResp struct {
+	Message MessageObj `json:"message"`
+}
+
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 
 func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, error) {
@@ -59,6 +63,47 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
 		return nil, errMessage
 	}
 
-	fmt.Printf("apiResp: %v", len(apiResp.Messages))
+	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(apiResp.Messages))
 	return apiResp.Messages, nil
+}
+
+func RemoveMessages(client *http.Client, messages []MessageObj) {
+	for _, message := range messages {
+		url := fmt.Sprintf("%s/%v/trash", baseUrl, message.Id)
+
+		req, err := http.NewRequest("POST", url, nil)
+		if err != nil {
+			fmt.Printf("error creating post request for url %s: %v", url, err.Error())
+			return
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Printf("error executing post request for url %s: %v", url, err.Error())
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			fmt.Printf("HTTP status: %v\nResponse body: %s", resp.Status, string(body))
+			return
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("error reading response body for url %s: %v", url, err.Error())
+			return
+		}
+
+		var trashApiResp MessageObj
+
+		err = json.Unmarshal(body, &trashApiResp)
+		if err != nil {
+			fmt.Printf("error unmarshalling JSOn response from url %s: %v", url, err.Error())
+			return
+		}
+
+		fmt.Printf("removed email with id: %v\n", trashApiResp.Id)
+	}
 }

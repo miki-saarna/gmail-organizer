@@ -77,7 +77,7 @@ func Main(senderAddress string) {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+	config, err := google.ConfigFromJSON(b, gmail.GmailModifyScope)
 	if err != nil {
 					log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -102,5 +102,13 @@ func Main(senderAddress string) {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
-	ListMessagesFromSender(client, senderAddress)
+	messages, err := ListMessagesFromSender(client, senderAddress)
+	if err != nil {
+		fmt.Printf("could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
+		return
+	}
+
+	if len(messages) > 0 {
+		RemoveMessages(client, messages)
+	}
 }

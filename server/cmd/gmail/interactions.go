@@ -106,7 +106,7 @@ func (c *Client) RemoveMessages(messages []MessageObj) {
 
 		err = json.Unmarshal(body, &trashApiResp)
 		if err != nil {
-			fmt.Printf("error unmarshalling JSOn response from url %s: %v", url, err.Error())
+			fmt.Printf("error unmarshalling JSON response from url %s: %v", url, err.Error())
 			return
 		}
 

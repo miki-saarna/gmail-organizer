@@ -1,9 +1,11 @@
 package gmail
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -18,6 +20,10 @@ type ApiResp struct {
 
 type TrashApiResp struct {
 	Message MessageObj `json:"message"`
+}
+
+type batchDeleteBody struct {
+	Ids []string `json:"ids"`
 }
 
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
@@ -106,4 +112,41 @@ func RemoveMessages(client *http.Client, messages []MessageObj) {
 
 		fmt.Printf("removed email with id: %v\n", trashApiResp.Id)
 	}
+}
+
+func BatchPermanentlyDeleteMessages (client *http.Client, messageIds []string) {
+	url := fmt.Sprintf("%v/batchDelete", baseUrl)
+	reqBody := batchDeleteBody{ Ids: messageIds }
+
+	data, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+	reader := bytes.NewReader((data))
+
+	req, err := http.NewRequest("POST", url, reader)
+	if err != nil {
+		fmt.Printf("an error occurred: %v", err.Error())
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("an error occurred: %v", err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("an error occurred, status code: %v", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("removed emails with id:")
+	for _, id := range messageIds {
+		fmt.Printf("\n-%s", id)
+	}
+
 }

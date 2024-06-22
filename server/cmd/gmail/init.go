@@ -77,7 +77,7 @@ func Main(senderAddress string) {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, gmail.GmailModifyScope)
+	config, err := google.ConfigFromJSON(b, gmail.MailGoogleComScope) // gmail.GmailModifyScope
 	if err != nil {
 					log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -108,7 +108,17 @@ func Main(senderAddress string) {
 		return
 	}
 
-	if len(messages) > 0 {
-		RemoveMessages(client, messages)
+	messagesLen := len(messages)
+
+	if messagesLen > 0 {
+		messagesList := make([]string, messagesLen)
+		for idx, message := range messages {
+			messagesList[idx] = message.Id
+		}
+
+		// RemoveMessages(client, messages)
+
+		BatchPermanentlyDeleteMessages(client, messagesList)
 	}
+
 }

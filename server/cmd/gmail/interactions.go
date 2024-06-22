@@ -139,12 +139,12 @@ func BatchPermanentlyDeleteMessages (client *http.Client, messageIds []string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("an error occurred, status code: %v", resp.StatusCode)
-		return
-	}
+	// if resp.StatusCode != http.StatusOK {
+	// 	fmt.Printf("an error occurred, status code: %v", resp.StatusCode)
+	// 	return
+	// }
 
-	fmt.Printf("removed emails with id:")
+	fmt.Printf("Permanently deleted emails with ID:")
 	for _, id := range messageIds {
 		fmt.Printf("\n-%s", id)
 	}

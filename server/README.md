@@ -23,3 +23,8 @@ Working CLI:
 find all emails:
 
 - Input email address as first argument. Example: go run ./cmd/main.go "helloworld@gmail.com"
+
+DIRECTIONS
+
+- When changing scope, MUST delete `token.json` file so new one can be recreated
+- Copy `deletionList.example.json` and rename `deletionList.json`. Fill with relevant email address values

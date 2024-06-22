@@ -12,6 +12,8 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
+
+	"gmail-organizer/utils"
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -118,7 +120,12 @@ func Main(senderAddress string) {
 
 		// RemoveMessages(client, messages)
 
-		BatchPermanentlyDeleteMessages(client, messagesList)
+		confirmation := utils.AskForConfirmation(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the sender %v", senderAddress))
+		if confirmation {
+			BatchPermanentlyDeleteMessages(client, messagesList)
+		} else {
+			return
+		}
 	}
 
 }

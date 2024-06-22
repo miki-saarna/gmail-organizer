@@ -14,7 +14,7 @@ type deletionList []string
 func main () {
 	var deletionList deletionList
 
-	jsonFile, err := os.Open("deletionList.json") // needs absolute path?
+	jsonFile, err := os.Open("deletionList.json") // relative path?
 	if err != nil {
 		fmt.Printf("could not open json list: %v", err.Error())
 		return
@@ -39,7 +39,8 @@ func main () {
 		senderBulletPointList += fmt.Sprintf("\n- %v", senderAddress)
 	}
 
-	isConfirmed := utils.AskForConfirmation(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the following senders: %v?", senderBulletPointList))
+	confirmationMsg := utils.ConfirmationMsg(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the following senders: %v?", senderBulletPointList))
+	isConfirmed := confirmationMsg.AskForConfirmation()
 	if (isConfirmed) {
 		gmail.Main(deletionList);
 	}

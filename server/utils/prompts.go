@@ -8,11 +8,13 @@ import (
 	"strings"
 )
 
-func AskForConfirmation(s string) bool {
+type ConfirmationMsg string
+
+func (c *ConfirmationMsg) AskForConfirmation() bool {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Printf("%s \n\n[y/n]: ", s)
+		fmt.Printf("%s \n\n[y/n]: ", *c)
 
 		input, err := reader.ReadString('\n')
 		if err != nil {

@@ -14,6 +14,10 @@ import (
 	"google.golang.org/api/option"
 )
 
+type Client struct {
+	*http.Client
+}
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
@@ -102,11 +106,13 @@ func Main(senderAddresses []string) {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
+	apiClient := Client{client}
+
 	allMessages := []MessageObj{}
 
 	for _, senderAddress := range senderAddresses {
 
-		messages, err := ListMessagesFromSender(client, senderAddress)
+		messages, err := apiClient.ListMessagesFromSender(senderAddress)
 		if err != nil {
 			fmt.Printf("could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
 			return
@@ -122,9 +128,9 @@ func Main(senderAddresses []string) {
 			messagesList[idx] = message.Id
 		}
 
-		// RemoveMessages(client, messages)
+		// apiClient.RemoveMessages(messages)
 		
-		BatchPermanentlyDeleteMessages(client, messagesList)
+		apiClient.BatchPermanentlyDeleteMessages(messagesList)
 	}
 
 }

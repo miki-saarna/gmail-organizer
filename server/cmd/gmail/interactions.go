@@ -28,7 +28,7 @@ type batchDeleteBody struct {
 
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 
-func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, error) {
+func (c *Client) ListMessagesFromSender(sender string) ([]MessageObj, error) {
 	url := fmt.Sprintf("%v?q=from:%v",baseUrl, sender)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -38,7 +38,7 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
 		return nil, errMessage
 	}
 
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		errMessage := fmt.Errorf("error executing get request for url \"%v\": %v", url, err.Error())
 		fmt.Println(errMessage)
@@ -51,7 +51,7 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
     errMessage := fmt.Errorf("HTTP status: %v\nResponse body: %v", resp.Status, string(body))
 		fmt.Println(errMessage)
     return nil, fmt.Errorf("HTTP status %v for url %v", resp.Status, url)
-}
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -73,7 +73,7 @@ func ListMessagesFromSender(client *http.Client, sender string) ([]MessageObj, e
 	return apiResp.Messages, nil
 }
 
-func RemoveMessages(client *http.Client, messages []MessageObj) {
+func (c *Client) RemoveMessages(messages []MessageObj) {
 	for _, message := range messages {
 		url := fmt.Sprintf("%s/%v/trash", baseUrl, message.Id)
 
@@ -83,7 +83,7 @@ func RemoveMessages(client *http.Client, messages []MessageObj) {
 			return
 		}
 
-		resp, err := client.Do(req)
+		resp, err := c.Do(req)
 		if err != nil {
 			fmt.Printf("error executing post request for url %s: %v", url, err.Error())
 			return
@@ -114,7 +114,7 @@ func RemoveMessages(client *http.Client, messages []MessageObj) {
 	}
 }
 
-func BatchPermanentlyDeleteMessages (client *http.Client, messageIds []string) {
+func (c *Client) BatchPermanentlyDeleteMessages (messageIds []string) {
 	url := fmt.Sprintf("%v/batchDelete", baseUrl)
 	reqBody := batchDeleteBody{ Ids: messageIds }
 
@@ -132,7 +132,7 @@ func BatchPermanentlyDeleteMessages (client *http.Client, messageIds []string) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		fmt.Printf("an error occurred: %v", err.Error())
 		return

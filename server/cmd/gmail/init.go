@@ -69,7 +69,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Main(senderAddress string) {
+func Main(senderAddresses []string) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -102,17 +102,23 @@ func Main(senderAddress string) {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
-	messages, err := ListMessagesFromSender(client, senderAddress)
-	if err != nil {
-		fmt.Printf("could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
-		return
+	allMessages := []MessageObj{}
+
+	for _, senderAddress := range senderAddresses {
+
+		messages, err := ListMessagesFromSender(client, senderAddress)
+		if err != nil {
+			fmt.Printf("could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
+			return
+		}
+		allMessages = append(allMessages, messages...)
 	}
 
-	messagesLen := len(messages)
+	messagesLen := len(allMessages)
 
 	if messagesLen > 0 {
 		messagesList := make([]string, messagesLen)
-		for idx, message := range messages {
+		for idx, message := range allMessages {
 			messagesList[idx] = message.Id
 		}
 

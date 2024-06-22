@@ -41,9 +41,7 @@ func main () {
 
 	isConfirmed := utils.AskForConfirmation(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the following senders: %v?", senderBulletPointList))
 	if (isConfirmed) {
-		for _, senderAddress := range deletionList {
-			gmail.Main(senderAddress);
-		}
+		gmail.Main(deletionList);
 	}
 
 	// if len(os.Args) < 2 {

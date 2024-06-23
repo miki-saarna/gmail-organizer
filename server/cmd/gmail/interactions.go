@@ -37,10 +37,10 @@ func (r *requestExecutionError) Error() string {
  return fmt.Sprintf("error executing %v request for url \"%v\": %v", r.method, r.url, r.err)
 }
 
-var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
-	url := fmt.Sprintf("%v?q=from:%v",baseUrl, sender)
+	url := fmt.Sprintf("%v/messages?q=from:%v",baseUrl, sender)
 	reqMethod := "GET"
 
 	req, err := http.NewRequest(reqMethod, url, nil)
@@ -83,7 +83,7 @@ func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
 
 func (c *Client) RemoveMessages(messages []messageObj) {
 	for _, message := range messages {
-		url := fmt.Sprintf("%s/%v/trash", baseUrl, message.Id)
+		url := fmt.Sprintf("%s/messages/%v/trash", baseUrl, message.Id)
 
 		req, err := http.NewRequest("POST", url, nil)
 		if err != nil {
@@ -123,7 +123,7 @@ func (c *Client) RemoveMessages(messages []messageObj) {
 }
 
 func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
-	url := fmt.Sprintf("%v/batchDelete", baseUrl)
+	url := fmt.Sprintf("%v/messages/batchDelete", baseUrl)
 	reqBody := batchDeleteBody{ Ids: messageIds }
 	reqMethod := "POST"
 

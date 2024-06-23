@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -104,28 +103,26 @@ func (c *Client) RemoveMessages(messages []MessageObj) {
 	}
 }
 
-func (c *Client) BatchPermanentlyDeleteMessages (messageIds []string) {
+func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	url := fmt.Sprintf("%v/batchDelete", baseUrl)
 	reqBody := batchDeleteBody{ Ids: messageIds }
 
 	data, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error unmsharlling reqBody: %v\nreqBody: %v", err.Error(), reqBody)
 	}
 	reader := bytes.NewReader((data))
 
 	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
-		fmt.Printf("an error occurred: %v", err.Error())
-		return
+		return fmt.Errorf("error creating post request for url \"%v\": %v", url, err.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.Do(req)
 	if err != nil {
-		fmt.Printf("an error occurred: %v", err.Error())
-		return
+		return fmt.Errorf("error executing post request for url \"%v\": %v", url, err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -139,4 +136,5 @@ func (c *Client) BatchPermanentlyDeleteMessages (messageIds []string) {
 		fmt.Printf("\n-%s", id)
 	}
 
+	return nil
 }

@@ -129,7 +129,10 @@ func Main(senderAddresses []string) {
 
 		// apiClient.RemoveMessages(messages)
 		
-		apiClient.BatchPermanentlyDeleteMessages(messagesList)
+		err := apiClient.BatchPermanentlyDeleteMessages(messagesList)
+		if err != nil {
+			log.Fatalf("Could not successfully delete messages: %v", err.Error())
+		}
 	}
 
 }

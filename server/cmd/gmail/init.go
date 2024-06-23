@@ -114,8 +114,7 @@ func Main(senderAddresses []string) {
 
 		messages, err := apiClient.ListMessagesFromSender(senderAddress)
 		if err != nil {
-			fmt.Printf("could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
-			return
+			log.Fatalf("Could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
 		}
 		allMessages = append(allMessages, messages...)
 	}

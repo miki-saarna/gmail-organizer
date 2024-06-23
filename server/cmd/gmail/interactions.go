@@ -33,40 +33,30 @@ func (c *Client) ListMessagesFromSender(sender string) ([]MessageObj, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		errMessage := fmt.Errorf("error creating get request for url \"%v\": %v", url, err.Error())
-		fmt.Println(errMessage)
-		return nil, errMessage
+		return nil, fmt.Errorf("error creating get request for url \"%v\": %v", url, err.Error())
 	}
 
 	resp, err := c.Do(req)
 	if err != nil {
-		errMessage := fmt.Errorf("error executing get request for url \"%v\": %v", url, err.Error())
-		fmt.Println(errMessage)
-		return nil, errMessage
+		return nil, fmt.Errorf("error executing get request for url \"%v\": %v", url, err.Error())
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-    body, _ := io.ReadAll(resp.Body)
-    errMessage := fmt.Errorf("HTTP status: %v\nResponse body: %v", resp.Status, string(body))
-		fmt.Println(errMessage)
+    // body, _ := io.ReadAll(resp.Body)
     return nil, fmt.Errorf("HTTP status %v for url %v", resp.Status, url)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errMessage := fmt.Errorf("error reading response body for url %v: %v", url, err.Error())
-		fmt.Println(errMessage)
-		return nil, errMessage
+		return nil, fmt.Errorf("error reading response body for url %v: %v", url, err.Error())
 	}
 
 	var apiResp ApiResp
 
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
-		errMessage := fmt.Errorf("error unmarshalling JSON response for url %v: %v", url, err.Error())
-		fmt.Println(errMessage)
-		return nil, errMessage
+		return nil, fmt.Errorf("error unmarshalling JSON response for url %v: %v", url, err.Error())
 	}
 
 	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(apiResp.Messages))

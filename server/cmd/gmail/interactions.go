@@ -25,19 +25,36 @@ type batchDeleteBody struct {
 	Ids []string `json:"ids"`
 }
 
+type requestCreationError struct {
+	method, url, err string
+}
+
+type requestExecutionError struct {
+	method, url, err string
+}
+
+func (r *requestCreationError) Error() string {
+ return fmt.Sprintf("error creating %v request for url \"%v\": %v", r.method, r.url, r.err)
+}
+
+func (r *requestExecutionError) Error() string {
+ return fmt.Sprintf("error executing %v request for url \"%v\": %v", r.method, r.url, r.err)
+}
+
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 
 func (c *Client) ListMessagesFromSender(sender string) ([]MessageObj, error) {
 	url := fmt.Sprintf("%v?q=from:%v",baseUrl, sender)
+	reqMethod := "GET"
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(reqMethod, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating get request for url \"%v\": %v", url, err.Error())
+		return nil, &requestCreationError{reqMethod, url, err.Error()}
 	}
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing get request for url \"%v\": %v", url, err.Error())
+		return nil, &requestExecutionError{reqMethod, url, err.Error()}
 	}
 	defer resp.Body.Close()
 
@@ -106,6 +123,7 @@ func (c *Client) RemoveMessages(messages []MessageObj) {
 func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	url := fmt.Sprintf("%v/batchDelete", baseUrl)
 	reqBody := batchDeleteBody{ Ids: messageIds }
+	reqMethod := "POST"
 
 	data, err := json.Marshal(reqBody)
 	if err != nil {
@@ -113,16 +131,16 @@ func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	}
 	reader := bytes.NewReader((data))
 
-	req, err := http.NewRequest("POST", url, reader)
+	req, err := http.NewRequest(reqMethod, url, reader)
 	if err != nil {
-		return fmt.Errorf("error creating post request for url \"%v\": %v", url, err.Error())
+		return &requestCreationError{reqMethod, url, err.Error()}
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return fmt.Errorf("error executing post request for url \"%v\": %v", url, err.Error())
+		return &requestCreationError{reqMethod, url, err.Error()}
 	}
 	defer resp.Body.Close()
 

@@ -108,7 +108,7 @@ func Main(senderAddresses []string) {
 
 	apiClient := Client{client}
 
-	allMessages := []MessageObj{}
+	allMessages := []string{}
 
 	for _, senderAddress := range senderAddresses {
 
@@ -119,17 +119,10 @@ func Main(senderAddresses []string) {
 		allMessages = append(allMessages, messages...)
 	}
 
-	messagesLen := len(allMessages)
-
-	if messagesLen > 0 {
-		messagesList := make([]string, messagesLen)
-		for idx, message := range allMessages {
-			messagesList[idx] = message.Id
-		}
-
+	if len(allMessages) > 0 {
 		// apiClient.RemoveMessages(messages)
 		
-		err := apiClient.BatchPermanentlyDeleteMessages(messagesList)
+		err := apiClient.BatchPermanentlyDeleteMessages(allMessages)
 		if err != nil {
 			log.Fatalf("Could not successfully delete messages: %v", err.Error())
 		}

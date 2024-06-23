@@ -43,7 +43,7 @@ func (r *requestExecutionError) Error() string {
 
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 
-func (c *Client) ListMessagesFromSender(sender string) ([]MessageObj, error) {
+func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
 	url := fmt.Sprintf("%v?q=from:%v",baseUrl, sender)
 	reqMethod := "GET"
 
@@ -76,7 +76,13 @@ func (c *Client) ListMessagesFromSender(sender string) ([]MessageObj, error) {
 	}
 
 	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(apiResp.Messages))
-	return apiResp.Messages, nil
+
+	messages := make([]string, len(apiResp.Messages))
+	for idx, message := range apiResp.Messages {
+		messages[idx] = message.Id
+	}
+
+	return messages, nil
 }
 
 func (c *Client) RemoveMessages(messages []MessageObj) {

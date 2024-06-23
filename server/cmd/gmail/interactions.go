@@ -9,16 +9,12 @@ import (
 )
 
 
-type MessageObj struct {
+type messageObj struct {
 	Id string `json:"id"`
 }
 
-type ApiResp struct {
-	Messages []MessageObj `json:"messages"`
-}
-
-type TrashApiResp struct {
-	Message MessageObj `json:"message"`
+type unmarshalledRes struct {
+	Messages []messageObj `json:"messages"`
 }
 
 type batchDeleteBody struct {
@@ -52,40 +48,40 @@ func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
 		return nil, &requestCreationError{reqMethod, url, err.Error()}
 	}
 
-	resp, err := c.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return nil, &requestExecutionError{reqMethod, url, err.Error()}
 	}
-	defer resp.Body.Close()
+	defer res.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-    // body, _ := io.ReadAll(resp.Body)
-    return nil, fmt.Errorf("HTTP status %v for url %v", resp.Status, url)
+	if res.StatusCode != http.StatusOK {
+    // body, _ := io.ReadAll(res.Body)
+    return nil, fmt.Errorf("HTTP status %v for url %v", res.Status, url)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body for url %v: %v", url, err.Error())
 	}
 
-	var apiResp ApiResp
+	var unmarshalledRes unmarshalledRes
 
-	err = json.Unmarshal(body, &apiResp)
+	err = json.Unmarshal(body, &unmarshalledRes)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling JSON response for url %v: %v", url, err.Error())
 	}
 
-	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(apiResp.Messages))
+	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(unmarshalledRes.Messages))
 
-	messages := make([]string, len(apiResp.Messages))
-	for idx, message := range apiResp.Messages {
+	messages := make([]string, len(unmarshalledRes.Messages))
+	for idx, message := range unmarshalledRes.Messages {
 		messages[idx] = message.Id
 	}
 
 	return messages, nil
 }
 
-func (c *Client) RemoveMessages(messages []MessageObj) {
+func (c *Client) RemoveMessages(messages []messageObj) {
 	for _, message := range messages {
 		url := fmt.Sprintf("%s/%v/trash", baseUrl, message.Id)
 
@@ -114,15 +110,15 @@ func (c *Client) RemoveMessages(messages []MessageObj) {
 			return
 		}
 
-		var trashApiResp MessageObj
+		var unmarshalledMessageObj messageObj
 
-		err = json.Unmarshal(body, &trashApiResp)
+		err = json.Unmarshal(body, &unmarshalledMessageObj)
 		if err != nil {
 			fmt.Printf("error unmarshalling JSON response from url %s: %v", url, err.Error())
 			return
 		}
 
-		fmt.Printf("removed email with id: %v\n", trashApiResp.Id)
+		fmt.Printf("removed email with id: %v\n", unmarshalledMessageObj.Id)
 	}
 }
 

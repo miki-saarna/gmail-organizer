@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -20,7 +19,7 @@ type Options []string
 
 type ConfirmationMsg string
 
-func (c *ConfirmationMsg) AskForConfirmation() bool {
+func (c *ConfirmationMsg) AskForConfirmation() (bool, error) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -28,15 +27,15 @@ func (c *ConfirmationMsg) AskForConfirmation() bool {
 
 		input, err := reader.ReadString('\n')
 		if err != nil {
-			log.Fatal(err)
+			return false, fmt.Errorf("error reading input: %v", err.Error())
 		}
 
 		input = strings.ToLower(strings.TrimSpace(input))
 
 		if input == "y" {
-			return true
+			return true, nil
 		} else if input == "n" {
-			return false
+			return false, nil
 		} else {
 			fmt.Printf("Invalid input: %s. Please enter only \"y\" or \"n\".\n", input)
 		}

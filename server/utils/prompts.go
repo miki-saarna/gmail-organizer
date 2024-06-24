@@ -58,7 +58,7 @@ func (o *Options) SelectOption() (string, error) {
 		fmt.Println("Use the arrow keys to select an option and press Enter:")
 		for i, option := range options {
 			if i == selected {
-				fmt.Printf("%s%-10s <--%s\n", colorGreen, option, colorReset)
+				fmt.Printf("%s%-20s <--%s\n", colorGreen, option, colorReset)
 			} else {
 				fmt.Printf("%s\n", option)
 			}

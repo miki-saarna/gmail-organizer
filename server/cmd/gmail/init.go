@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gmail-organizer/utils"
 	"log"
 	"net/http"
 	"os"
@@ -37,6 +38,11 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Go to the following link in your browser then type the "+
 					"authorization code: \n%v\n", authURL)
+
+	err := utils.OpenURL(authURL)
+	if err != nil {
+		fmt.Printf("Failed to automatically open URL %s. Manually copy the link above.", authURL)
+	}
 
 	var authCode string
 	if _, err := fmt.Scan(&authCode); err != nil {

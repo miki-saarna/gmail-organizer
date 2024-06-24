@@ -82,21 +82,15 @@ func saveToken(path string, token *oauth2.Token) {
 func InitMessageRemoval(senderAddresses []string) {
 	client, _ := main()
 
-	allMessages := []string{}
-
-	for _, senderAddress := range senderAddresses {
-
-		messages, err := client.ListMessagesFromSender(senderAddress)
-		if err != nil {
-			log.Fatalf("Could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
-		}
-		allMessages = append(allMessages, messages...)
+	messages, err := client.ListMessagesFromSender(senderAddresses)
+	if err != nil {
+		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
 	}
 
-	if len(allMessages) > 0 {
+	if len(messages) > 0 {
 		// apiClient.RemoveMessages(messages)
 		
-		err := client.BatchPermanentlyDeleteMessages(allMessages)
+		err := client.BatchPermanentlyDeleteMessages(messages)
 		if err != nil {
 			log.Fatalf("Could not successfully delete messages: %v", err.Error())
 		}

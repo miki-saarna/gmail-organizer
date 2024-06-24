@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
@@ -51,8 +52,14 @@ func (r *requestExecutionError) Error() string {
  return fmt.Sprintf("error executing %v request for url \"%v\": %v", r.method, r.url, r.err)
 }
 
-func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
-	url := fmt.Sprintf("%v/messages?q=from:%v",baseUrl, sender)
+func (c *Client) ListMessagesFromSender(senderAddresses []string) ([]string, error) {
+	query := senderAddresses[0]
+	for i := 1; i < len(senderAddresses); i++ {
+		query += fmt.Sprintf(" OR %v", senderAddresses[i])
+	}
+	encodedQuery := url.QueryEscape(query)
+	
+	url := fmt.Sprintf("%s/messages?q=%s", baseUrl, encodedQuery)
 	reqMethod := "GET"
 
 	req, err := http.NewRequest(reqMethod, url, nil)
@@ -83,7 +90,7 @@ func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
 		return nil, fmt.Errorf("error unmarshalling JSON response for url %v: %v", url, err.Error())
 	}
 
-	fmt.Printf("number of emails from sender %s found: %v\n", sender, len(unmarshalledRes.Messages))
+	fmt.Printf("Number of emails found: %v\n", len(unmarshalledRes.Messages))
 
 	messages := make([]string, len(unmarshalledRes.Messages))
 	for idx, message := range unmarshalledRes.Messages {

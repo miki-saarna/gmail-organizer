@@ -59,7 +59,7 @@ func main () {
 		if err != nil {
 			log.Fatalf("There was an error selection an option: %v", err)
 		} else if (isConfirmed) {
-			gmail.Main(deletionList);
+			gmail.InitMessageRemoval(deletionList);
 		}
 	} else if selectedOption == updateSpam {
 		// create update SPAM list func

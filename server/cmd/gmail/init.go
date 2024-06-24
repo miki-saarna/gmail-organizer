@@ -73,12 +73,14 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func (c *Client) initMessageRemoval (senderAddresses []string) {
+func InitMessageRemoval(senderAddresses []string) {
+	client := Main()
+
 	allMessages := []string{}
 
 	for _, senderAddress := range senderAddresses {
 
-		messages, err := c.ListMessagesFromSender(senderAddress)
+		messages, err := client.ListMessagesFromSender(senderAddress)
 		if err != nil {
 			log.Fatalf("Could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
 		}
@@ -88,14 +90,14 @@ func (c *Client) initMessageRemoval (senderAddresses []string) {
 	if len(allMessages) > 0 {
 		// apiClient.RemoveMessages(messages)
 		
-		err := c.BatchPermanentlyDeleteMessages(allMessages)
+		err := client.BatchPermanentlyDeleteMessages(allMessages)
 		if err != nil {
 			log.Fatalf("Could not successfully delete messages: %v", err.Error())
 		}
 	}
 }
 
-func Main(senderAddresses []string) {
+func Main() *Client {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -121,14 +123,12 @@ func Main(senderAddresses []string) {
 	}
 	if len(r.Labels) == 0 {
 					fmt.Println("No labels found.")
-					return
+					return nil
 	}
 	fmt.Println("Labels:")
 	for _, l := range r.Labels {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
-	clientWrapper := Client{client}
-
-	clientWrapper.initMessageRemoval(senderAddresses)
+	return &Client{client}
 }

@@ -74,7 +74,7 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 func InitMessageRemoval(senderAddresses []string) {
-	client := Main()
+	client, _ := main()
 
 	allMessages := []string{}
 
@@ -97,7 +97,20 @@ func InitMessageRemoval(senderAddresses []string) {
 	}
 }
 
-func Main() *Client {
+func InitTrashListUpdate(senderAddresses []string) {
+	client, _ := main()
+
+	for i := 0; i < len(senderAddresses); i++ {
+		filter, err := client.AssignSenderToTrashList(senderAddresses[i])
+		if err != nil {
+			log.Fatalf("Could not successfully assign senders to trash list: %v\n", err.Error())
+		}
+	
+		fmt.Printf("Filtered successfully applied: %v\n", filter)
+	}
+}
+
+func main() (*Client, *gmail.Service) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -105,7 +118,7 @@ func Main() *Client {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, gmail.MailGoogleComScope) // gmail.GmailModifyScope
+	config, err := google.ConfigFromJSON(b, gmail.MailGoogleComScope, gmail.GmailSettingsBasicScope)
 	if err != nil {
 					log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -123,12 +136,12 @@ func Main() *Client {
 	}
 	if len(r.Labels) == 0 {
 					fmt.Println("No labels found.")
-					return nil
+					return nil, nil
 	}
 	fmt.Println("Labels:")
 	for _, l := range r.Labels {
-					fmt.Printf("- %s\n", l.Name)
+					fmt.Printf("- %s\n", l.Name) // fmt.Printf("- %s: %s\n", l.Name, l.Id)
 	}
 
-	return &Client{client}
+	return &Client{client}, srv
 }

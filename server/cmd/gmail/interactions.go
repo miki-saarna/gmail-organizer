@@ -8,6 +8,20 @@ import (
 	"net/http"
 )
 
+var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
+
+type criteria struct {
+	From string `json:"from"`
+}
+
+type action struct {
+  AddLabelIds []string `json:"addLabelIds"`
+}
+
+type Filter struct {
+  Criteria criteria `json:"criteria"`
+  Action action `json:"action"`
+}
 
 type messageObj struct {
 	Id string `json:"id"`
@@ -36,8 +50,6 @@ func (r *requestCreationError) Error() string {
 func (r *requestExecutionError) Error() string {
  return fmt.Sprintf("error executing %v request for url \"%v\": %v", r.method, r.url, r.err)
 }
-
-var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 func (c *Client) ListMessagesFromSender(sender string) ([]string, error) {
 	url := fmt.Sprintf("%v/messages?q=from:%v",baseUrl, sender)
@@ -137,7 +149,6 @@ func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	if err != nil {
 		return &requestCreationError{reqMethod, url, err.Error()}
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.Do(req)
@@ -157,4 +168,63 @@ func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	}
 
 	return nil
+}
+
+func (c *Client) AssignSenderToTrashList(sender string) (*Filter, error) {
+	url := fmt.Sprintf("%v/settings/filters", baseUrl)
+	reqMethod := "POST"
+	reqBody := Filter{
+		criteria{sender},
+		action{[]string{"TRASH"}},
+	}
+	// reqBody := map[string]interface{}{
+	// 	"criteria": map[string]interface{}{
+	// 			"from": sender,
+	// 	},
+	// 	"action": map[string]interface{}{
+	// 			"addLabelIds": []string{"TRASH"},
+	// 	},
+	// }
+
+	// marshal/json-ize body
+	data, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error marshalizing %v", reqBody)
+	}
+	reader := bytes.NewReader((data))
+
+	req, err := http.NewRequest(reqMethod, url, reader)
+	if err != nil {
+		return nil, &requestCreationError{reqMethod, url, err.Error()}
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// init HTTP request
+	res, err := c.Do(req)
+	if err != nil {
+		return nil, &requestExecutionError{reqMethod, url, err.Error()}
+	}
+	defer res.Body.Close()
+
+	// res.StatusCode validation necessary?
+	if res.StatusCode != http.StatusOK {
+    return nil, fmt.Errorf("HTTP status %v for url %v", res.Status, url)
+	}
+
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error reading body: %v", res.Body)
+	}
+
+	unmarshalledFilter := Filter{}
+
+	// unmarshal res.body
+	err = json.Unmarshal(body, &unmarshalledFilter)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error unmarshalling body: %v", err.Error())
+	}
+
+	// return res.body
+	return &unmarshalledFilter, nil
 }

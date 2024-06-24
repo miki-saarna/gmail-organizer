@@ -12,7 +12,7 @@ import (
 
 const (
 	deletion = "Delete emails"
-	updateSpam =  "Update SPAM list"
+	updateTrash =  "Update TRASH list"
 	exit =  "Exit"
 )
 
@@ -40,9 +40,8 @@ func main () {
 		fmt.Printf("could not unmarshal json list: %v", err.Error())
 		return
 	}
-	// fmt.Printf("unmarshalled: %v", deletionList)
 
-	options := utils.Options{deletion, updateSpam, exit}
+	options := utils.Options{deletion, updateTrash, exit}
 	selectedOption, err := options.SelectOption()
 	if err != nil {
 		log.Fatalf("There was an error selecting an option: %v", err)
@@ -61,8 +60,8 @@ func main () {
 		} else if (isConfirmed) {
 			gmail.InitMessageRemoval(deletionList);
 		}
-	} else if selectedOption == updateSpam {
-		// create update SPAM list func
+	} else if selectedOption == updateTrash {
+		gmail.InitTrashListUpdate(deletionList);
 	}
 
 	// if len(os.Args) < 2 {

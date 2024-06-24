@@ -73,6 +73,28 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
+func (c *Client) initMessageRemoval (senderAddresses []string) {
+	allMessages := []string{}
+
+	for _, senderAddress := range senderAddresses {
+
+		messages, err := c.ListMessagesFromSender(senderAddress)
+		if err != nil {
+			log.Fatalf("Could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
+		}
+		allMessages = append(allMessages, messages...)
+	}
+
+	if len(allMessages) > 0 {
+		// apiClient.RemoveMessages(messages)
+		
+		err := c.BatchPermanentlyDeleteMessages(allMessages)
+		if err != nil {
+			log.Fatalf("Could not successfully delete messages: %v", err.Error())
+		}
+	}
+}
+
 func Main(senderAddresses []string) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
@@ -106,26 +128,7 @@ func Main(senderAddresses []string) {
 					fmt.Printf("- %s\n", l.Name)
 	}
 
-	apiClient := Client{client}
+	clientWrapper := Client{client}
 
-	allMessages := []string{}
-
-	for _, senderAddress := range senderAddresses {
-
-		messages, err := apiClient.ListMessagesFromSender(senderAddress)
-		if err != nil {
-			log.Fatalf("Could not successfully retrieve emails from sender %s: %v", senderAddress, err.Error())
-		}
-		allMessages = append(allMessages, messages...)
-	}
-
-	if len(allMessages) > 0 {
-		// apiClient.RemoveMessages(messages)
-		
-		err := apiClient.BatchPermanentlyDeleteMessages(allMessages)
-		if err != nil {
-			log.Fatalf("Could not successfully delete messages: %v", err.Error())
-		}
-	}
-
+	clientWrapper.initMessageRemoval(senderAddresses)
 }

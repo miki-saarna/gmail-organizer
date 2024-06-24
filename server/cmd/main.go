@@ -6,6 +6,7 @@ import (
 	"gmail-organizer/cmd/gmail"
 	"gmail-organizer/utils"
 	"io"
+	"log"
 	"os"
 )
 
@@ -34,15 +35,23 @@ func main () {
 	}
 	// fmt.Printf("unmarshalled: %v", deletionList)
 
-	var senderBulletPointList string
-	for _, senderAddress := range deletionList {
-		senderBulletPointList += fmt.Sprintf("\n- %v", senderAddress)
+	options := utils.Options{"Delete emails", "Exit"}
+	selectedOption, err := options.SelectOption()
+	if err != nil {
+		log.Fatalf("There was an error selecting an option: %v", err)
 	}
 
-	confirmationMsg := utils.ConfirmationMsg(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the following senders: %v?", senderBulletPointList))
-	isConfirmed := confirmationMsg.AskForConfirmation()
-	if (isConfirmed) {
-		gmail.Main(deletionList);
+	if selectedOption == options[0] {
+		var senderBulletPointList string
+		for _, senderAddress := range deletionList {
+			senderBulletPointList += fmt.Sprintf("\n- %v", senderAddress)
+		}
+
+		confirmationMsg := utils.ConfirmationMsg(fmt.Sprintf("Are you sure you would like to permanently delete all emails from the following senders: %v?", senderBulletPointList))
+		isConfirmed := confirmationMsg.AskForConfirmation()
+		if (isConfirmed) {
+			gmail.Main(deletionList);
+		}
 	}
 
 	// if len(os.Args) < 2 {

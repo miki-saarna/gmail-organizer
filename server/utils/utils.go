@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"os/exec"
 	"runtime"
 )
@@ -22,12 +21,4 @@ func OpenURL(url string) error {
 	args = append(args, url)
 
 	return exec.Command(cmd, args...).Start()
-}
-
-func main() {
-	url := "https://www.example.com"
-	err := OpenURL(url)
-	if err != nil {
-		fmt.Println("Failed to open URL:", err)
-	}
 }

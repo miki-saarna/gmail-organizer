@@ -100,13 +100,21 @@ func InitMessageRemoval(senderAddresses []string) {
 func InitTrashListUpdate(senderAddresses []string) {
 	client, _ := main()
 
+	trashList, err := client.RetrieveTrashList()
+	if err != nil {
+		fmt.Printf("error occurred: %v", err.Error())
+	}
+
 	for i := 0; i < len(senderAddresses); i++ {
+		if _, found := trashList[senderAddresses[i]]; found {
+			continue
+		}
+
 		filter, err := client.AssignSenderToTrashList(senderAddresses[i])
 		if err != nil {
 			log.Fatalf("Could not successfully assign senders to trash list: %v\n", err.Error())
 		}
-	
-		fmt.Printf("Filtered successfully applied: %v\n", filter)
+		fmt.Printf("Filtered successfully applied: %v\n", *filter)
 	}
 }
 

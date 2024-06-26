@@ -24,6 +24,12 @@ type Filter struct {
   Action action `json:"action"`
 }
 
+type FiltersList struct {
+	Filter []Filter `json:"filter"`
+}
+
+type TrashList map[string]struct{}
+
 type messageObj struct {
 	Id string `json:"id"`
 }
@@ -175,6 +181,60 @@ func (c *Client) BatchPermanentlyDeleteMessages(messageIds []string) (error) {
 	}
 
 	return nil
+}
+
+func (c *Client) RetrieveTrashList() (TrashList, error) {
+	filters, err := c.RetrieveAllFilters()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving list of filters: %v", err.Error())
+	}
+
+	trashList := make(TrashList)
+
+	for _, filter := range filters {
+		for _, labelId := range filter.Action.AddLabelIds {
+			if labelId == "TRASH" {
+				trashList[filter.Criteria.From] = struct{}{}
+				continue
+			}
+		}
+	}
+
+	return trashList, nil
+
+}
+
+func (c *Client) RetrieveAllFilters() ([]Filter, error) {
+	url := fmt.Sprintf("%v/settings/filters", baseUrl)
+	reqMethod := "GET"
+
+	req, err := http.NewRequest(reqMethod, url, nil)
+	if err != nil {
+		return nil, &requestCreationError{reqMethod, url, err.Error()}
+	}
+
+	res, err := c.Do(req)
+	if err != nil {
+		return nil, &requestExecutionError{reqMethod, url, err.Error()}
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP status %v for url %v", res.Status, url)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body for url %v: %v", url, err.Error())
+	}
+
+	var filterRes FiltersList
+	err = json.Unmarshal(body, &filterRes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshall response.body: %v", err.Error())
+	}
+
+	return filterRes.Filter, nil
 }
 
 func (c *Client) AssignSenderToTrashList(sender string) (*Filter, error) {

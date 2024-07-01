@@ -118,6 +118,22 @@ func InitTrashListUpdate(senderAddresses []string) {
 	}
 }
 
+func InitUnsubscribe(senderAddresses []string) {
+	client, _ := main()
+
+	messages, err := client.ListMessagesFromSender(senderAddresses)
+	if err != nil {
+		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
+	}
+
+	if len(messages) > 0 {
+		err = client.UnsubscribeFromSenders(messages)
+		if err != nil {
+			log.Fatalf("Could not unsubscribe: \n%s", err)
+		}
+	}
+}
+
 func main() (*Client, *gmail.Service) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")

@@ -8,18 +8,27 @@ import (
 	"io"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 const (
 	deletion = "Delete emails"
-	updateTrash =  "Update TRASH list"
+	updateTrash = "Update TRASH list"
+	unsubscribe = "Unsubscribe script"
 	exit =  "Exit"
 )
 
 type deletionList []string
 
+func init() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err.Error())
+	}
+}
 
-func main () {
+func main() {
 	var deletionList deletionList
 
 	jsonFile, err := os.Open("deletionList.json") // relative path?
@@ -41,7 +50,7 @@ func main () {
 		return
 	}
 
-	options := utils.Options{deletion, updateTrash, exit}
+	options := utils.Options{deletion, updateTrash, unsubscribe, exit}
 	selectedOption, err := options.SelectOption()
 	if err != nil {
 		log.Fatalf("There was an error selecting an option: %v", err)
@@ -62,6 +71,8 @@ func main () {
 		}
 	} else if selectedOption == updateTrash {
 		gmail.InitTrashListUpdate(deletionList);
+	} else if selectedOption == unsubscribe {
+		gmail.InitUnsubscribe(deletionList)
 	}
 
 	// if len(os.Args) < 2 {

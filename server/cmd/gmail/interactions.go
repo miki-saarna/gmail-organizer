@@ -7,9 +7,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-)
+	"os"
+	"strconv"
+	"time"
 
-var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
+	"github.com/tebeka/selenium"
+)
 
 type criteria struct {
 	From string `json:"from"`
@@ -49,6 +52,15 @@ type requestCreationError struct {
 type requestExecutionError struct {
 	method, url, err string
 }
+
+var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
+
+var (
+	chromeDriverPath 	string
+	port             	string
+	profile 				 	string
+	userDataDirectory string
+)
 
 func (r *requestCreationError) Error() string {
  return fmt.Sprintf("error creating %v request for url \"%v\": %v", r.method, r.url, r.err)
@@ -104,6 +116,94 @@ func (c *Client) ListMessagesFromSender(senderAddresses []string) ([]string, err
 	}
 
 	return messages, nil
+}
+
+func (c *Client) UnsubscribeFromSenders(msgIds []string) error {
+	chromeDriverPath 	= os.Getenv("CHROME_DRIVER_PATH")
+	port             	= os.Getenv("WEB_DRIVER_PORT")
+	userDataDirectory = os.Getenv("CHROME_USER_DATA_DIRECTORY")
+	profile 				 	= os.Getenv("CHROME_PROFILE")
+
+	opts := []selenium.ServiceOption{
+		selenium.ChromeDriver(chromeDriverPath),
+	}
+
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return fmt.Errorf("error converting port string value to int: %s", err.Error())
+	}
+
+	service, err := selenium.NewChromeDriverService(chromeDriverPath, portInt, opts...)
+	if err != nil {
+		return fmt.Errorf("error starting ChromeDriver server: %s", err.Error())
+	}
+	defer service.Stop()
+
+	capabilities := selenium.Capabilities{"browserName": "chrome"}
+
+	chromeArgs := []string{
+		fmt.Sprintf("user-data-dir=%s", userDataDirectory),
+		fmt.Sprintf("profile-directory=%s", profile),
+		// "--headless",
+	}
+
+	capabilities["goog:chromeOptions"] = map[string]interface{}{
+		"args": chromeArgs,
+	}
+
+	wd, err := selenium.NewRemote(capabilities, fmt.Sprintf("http://localhost:%d/wd/hub", portInt))
+	if err != nil {
+		return fmt.Errorf("error connecting to WebDriver server: %s", err.Error())
+	}
+	defer wd.Quit()
+
+	var failedMsgIds []string
+
+	for _, msgId := range msgIds {
+		messageUrl := fmt.Sprintf("https://mail.google.com/mail/u/0/#inbox/%s", msgId)
+		if err := wd.Get(messageUrl); err != nil {
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error navigating to URL for message ID %s: %s", msgId, err.Error()))
+			continue
+		}
+
+		time.Sleep(1 * time.Second)
+
+		xpath := `//span[contains(@class, 'Ca') and contains(text(), 'Unsubscribe')]`
+		elem, err := wd.FindElement(selenium.ByXPATH, xpath)
+		if err != nil {
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Subscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			continue
+		}
+
+		if err := elem.Click(); err != nil {
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Subscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			continue
+		}
+
+		xpath = `//button[contains(text(), 'Unsubscribe')]`
+		elem, err = wd.FindElement(selenium.ByXPATH, xpath)
+		if err != nil {
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Subscribe\" button element for message ID %s: %s", msgId, err.Error()))
+			continue
+		}
+
+		if err := elem.Click(); err != nil {
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Subscribe\" button element for message ID %s: %s", msgId, err.Error()))
+			continue
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	if len(failedMsgIds) > 0 {
+		errorMsgAsStr := "The following errors occurred:"
+		for _, failedMsgId := range failedMsgIds {
+			errorMsgAsStr += fmt.Sprintf("\n- %s", failedMsgId)
+		}
+		return fmt.Errorf("%s", errorMsgAsStr)
+	}
+
+	return nil
 }
 
 func (c *Client) RemoveMessages(messages []messageObj) {

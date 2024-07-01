@@ -53,7 +53,7 @@ type requestExecutionError struct {
 	method, url, err string
 }
 
-var baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
+const baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 var (
 	chromeDriverPath 	string

@@ -123,7 +123,7 @@ func (c *Client) ListMessagesFromSender(senderAddresses []string) ([]string, err
 	return messages, nil
 }
 
-func (c *Client) UnsubscribeFromSenders(msgIds []string) error {
+func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 	chromeDriverPath 	= os.Getenv("CHROME_DRIVER_PATH")
 	port             	= os.Getenv("WEB_DRIVER_PORT")
 	userDataDirectory = os.Getenv("CHROME_USER_DATA_DIRECTORY")

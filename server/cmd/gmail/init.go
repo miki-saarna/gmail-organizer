@@ -128,7 +128,7 @@ func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 	}
 
 	if len(messages) > 0 {
-		err = client.UnsubscribeFromSenders(messages)
+		err = client.UnsubscribeWithWebDriver(messages)
 		if err != nil {
 			log.Fatalf("Could not unsubscribe: \n%s", err)
 		}

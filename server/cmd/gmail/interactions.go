@@ -58,7 +58,7 @@ type messagePayload struct {
 	Payload struct{Headers []struct{Name string `json:"name"`; Value string `json:"value"`} `json:"headers"`} `json:"payload"`
 }
 
-const baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
+const baseUrl = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 var (
 	chromeDriverPath 	string

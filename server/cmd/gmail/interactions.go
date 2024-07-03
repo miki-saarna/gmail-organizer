@@ -75,14 +75,14 @@ func (r *requestExecutionError) Error() string {
  return fmt.Sprintf("error executing %v request for url \"%v\": %v", r.method, r.url, r.err)
 }
 
-func (c *Client) ListMessagesFromSender(senderAddresses []string) ([]string, error) {
+func (c *Client) ListMessagesFromSender(senderAddresses []string, maxResults int) ([]string, error) {
 	query := senderAddresses[0]
 	for i := 1; i < len(senderAddresses); i++ {
 		query += fmt.Sprintf(" OR %v", senderAddresses[i])
 	}
 	encodedQuery := url.QueryEscape(query)
 	
-	url := fmt.Sprintf("%s/messages?q=%s", baseUrl, encodedQuery)
+	url := fmt.Sprintf("%s/messages?q=maxResults=%d&%s", baseUrl, maxResults, encodedQuery)
 	reqMethod := "GET"
 
 	req, err := http.NewRequest(reqMethod, url, nil)

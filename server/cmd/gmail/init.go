@@ -83,7 +83,7 @@ func saveToken(path string, token *oauth2.Token) {
 func InitMessageRemoval(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses)
+	messages, err := client.ListMessagesFromSender(senderAddresses, 500)
 	if err != nil {
 		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
 	}
@@ -122,7 +122,7 @@ func InitTrashListUpdate(senderAddresses []string) {
 func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses) // should only obtain 1 message / sender
+	messages, err := client.ListMessagesFromSender(senderAddresses, 500) // should only obtain 1 message / sender
 	if err != nil {
 		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
 	}
@@ -138,7 +138,7 @@ func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 func InitUnsubscribe(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses) // should only obtain 1 message / sender
+	messages, err := client.ListMessagesFromSender(senderAddresses, 500) // should only obtain 1 message / sender
 	if err != nil {
 		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
 	}

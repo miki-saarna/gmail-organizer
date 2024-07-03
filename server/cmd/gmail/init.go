@@ -122,13 +122,18 @@ func InitTrashListUpdate(senderAddresses []string) {
 func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses, 500) // should only obtain 1 message / sender
-	if err != nil {
-		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
+	var messages []string
+
+	for _, senderAddress := range senderAddresses {
+		retrievedMessages, err := client.ListMessagesFromSender([]string{senderAddress}, 1)
+		if err != nil {
+			fmt.Printf("Could not successfully retrieve email from %s: %v", senderAddress, err.Error())
+		}
+		messages = append(messages, retrievedMessages...)
 	}
 
 	if len(messages) > 0 {
-		err = client.UnsubscribeWithWebDriver(messages)
+		err := client.UnsubscribeWithWebDriver(messages)
 		if err != nil {
 			log.Fatalf("Could not unsubscribe: \n%s", err)
 		}
@@ -138,9 +143,14 @@ func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 func InitUnsubscribe(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses, 500) // should only obtain 1 message / sender
-	if err != nil {
-		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
+	var messages []string
+
+	for _, senderAddress := range senderAddresses {
+		retrievedMessages, err := client.ListMessagesFromSender([]string{senderAddress}, 1)
+		if err != nil {
+			fmt.Printf("Could not successfully retrieve email from %s: %v", senderAddress, err.Error())
+		}
+		messages = append(messages, retrievedMessages...)
 	}
 
 	for _, message := range messages {

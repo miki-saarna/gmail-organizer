@@ -268,10 +268,10 @@ func (c *Client) UnsubscribeByHttpAddress(httpAddress string) (string, error) {
 	var dataInterface interface{}
 	err = json.Unmarshal(data, &dataInterface)
 	if err != nil {
-		return string(data), nil
+		return fmt.Sprintf("\n%v\n", data), nil // return string(data), nil
 	}
 
-	return "May need to manually open link", nil
+	return "\nMay need to manually open link\n", nil
 }
 
 func (c *Client) UnsubscribeByMailtoAddress(mailtoAddress string) error {
@@ -300,7 +300,7 @@ func (c *Client) UnsubscribeByMailtoAddress(mailtoAddress string) error {
 		return &requestExecutionError{method, url, err.Error()}
 	}
 
-	fmt.Printf("Successfully sent unsubscribe request email to: %s", address)
+	fmt.Printf("Successfully sent unsubscribe request email to: %s\n", address)
 	return nil
 }
 

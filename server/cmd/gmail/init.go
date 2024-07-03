@@ -184,12 +184,12 @@ func InitUnsubscribe(senderAddresses []string) {
 		if unsubscribeMailtoAddress != "" {
 			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
 			if err != nil {
-				log.Fatalf("error occurred: %s", err.Error())
+				fmt.Printf("error occurred: %s", err.Error())
 			}
 		} else {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
-				log.Fatalf("error occurred: %s", err.Error())
+				fmt.Printf("error occurred: %s", err.Error())
 			}
 			fmt.Printf("Message body: %v", msg)
 		}

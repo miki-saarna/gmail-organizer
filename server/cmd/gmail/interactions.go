@@ -2,6 +2,7 @@ package gmail
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,6 +52,10 @@ type requestCreationError struct {
 
 type requestExecutionError struct {
 	method, url, err string
+}
+
+type messagePayload struct {
+	Payload struct{Headers []struct{Name string `json:"name"`; Value string `json:"value"`} `json:"headers"`} `json:"payload"`
 }
 
 const baseUrl string = "https://gmail.googleapis.com/gmail/v1/users/me"
@@ -203,6 +208,99 @@ func (c *Client) UnsubscribeFromSenders(msgIds []string) error {
 		return fmt.Errorf("%s", errorMsgAsStr)
 	}
 
+	return nil
+}
+
+func (c *Client) GetOriginalMessageById(msgId string) (*messagePayload, error) {
+	url := fmt.Sprintf("%v/messages/%s?format=%s", baseUrl, msgId, "full")
+	reqMethod := "GET"
+
+	req, err := http.NewRequest(reqMethod, url, nil)
+	if err != nil {
+		return nil, &requestCreationError{reqMethod, url, err.Error()}
+	}
+
+	res, err := c.Do(req)
+	if err != nil {
+		return nil, &requestCreationError{reqMethod, url, err.Error()}
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error reading the response's body: %v", err.Error())
+	}
+
+	var randomInterface messagePayload
+	err = json.Unmarshal(body, &randomInterface)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error unmarshalling the data: %v", err.Error())
+	}
+
+	return &randomInterface, nil
+}
+
+func (c *Client) UnsubscribeByHttpAddress(httpAddress string) (string, error) {
+	method := "POST"
+	address := httpAddress[1:len(httpAddress) - 1]
+	// fmt.Printf("%v\n", address)
+
+	req, err := http.NewRequest(method, address, nil)
+	if err != nil {
+		return "", &requestCreationError{method, address, err.Error()}
+	}
+
+	res, err := c.Do(req)
+	if err != nil {
+		return "", &requestExecutionError{method, address, err.Error()}
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+    return "", fmt.Errorf("HTTP status %v for url %v", res.Status, address)
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response body: %s", err.Error())
+	}
+	
+	var dataInterface interface{}
+	err = json.Unmarshal(data, &dataInterface)
+	if err != nil {
+		return string(data), nil
+	}
+
+	return "May need to manually open link", nil
+}
+
+func (c *Client) UnsubscribeByMailtoAddress(mailtoAddress string) error {
+	address := mailtoAddress[8:len(mailtoAddress) - 1]
+	method := "POST"
+	url := fmt.Sprintf("%v/messages/send", baseUrl)
+
+	rawEmail := fmt.Sprintf("From: mikitosaarna@gmail.com\r\nTo: %s\r\nSubject: Unsubscribe Request\r\n\r\nPlease unsubscribe me from this mailing list.", address)
+	encodedRawEmail := base64.URLEncoding.EncodeToString([]byte(rawEmail))
+	body := map[string]string{"raw": encodedRawEmail}
+	
+	marshalledBody, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("error marshalling body: %s", err.Error())
+	}
+	reader := bytes.NewReader(marshalledBody)
+
+	req, err := http.NewRequest(method, url , reader)
+	if err != nil {
+		return &requestCreationError{method, url, err.Error()}
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = c.Do(req)
+	if err != nil {
+		return &requestExecutionError{method, url, err.Error()}
+	}
+
+	fmt.Printf("Successfully sent unsubscribe request email to: %s", address)
 	return nil
 }
 

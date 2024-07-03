@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -118,10 +119,10 @@ func InitTrashListUpdate(senderAddresses []string) {
 	}
 }
 
-func InitUnsubscribe(senderAddresses []string) {
+func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 	client, _ := main()
 
-	messages, err := client.ListMessagesFromSender(senderAddresses)
+	messages, err := client.ListMessagesFromSender(senderAddresses) // should only obtain 1 message / sender
 	if err != nil {
 		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
 	}
@@ -130,6 +131,57 @@ func InitUnsubscribe(senderAddresses []string) {
 		err = client.UnsubscribeFromSenders(messages)
 		if err != nil {
 			log.Fatalf("Could not unsubscribe: \n%s", err)
+		}
+	}
+}
+
+func InitUnsubscribe(senderAddresses []string) {
+	client, _ := main()
+
+	messages, err := client.ListMessagesFromSender(senderAddresses) // should only obtain 1 message / sender
+	if err != nil {
+		log.Fatalf("Could not successfully retrieve emails: %v", err.Error())
+	}
+
+	for _, message := range messages {
+		data, err := client.GetOriginalMessageById(message)
+		if err != nil {
+			log.Fatalf("error occurred: %v", err.Error())
+		}
+		headersList := data.Payload.Headers
+
+		var unsubscribeHttpAddress, unsubscribeMailtoAddress string
+
+		for _, header := range headersList {
+			if header.Name == "List-Unsubscribe" {
+				unsubscribeAddresses := strings.Split(header.Value, ",")
+				if len(unsubscribeAddresses) > 1 {
+					if unsubscribeAddresses[0][1:8] == "mailto:" {
+						unsubscribeMailtoAddress = unsubscribeAddresses[0]
+						unsubscribeHttpAddress = unsubscribeAddresses[1]
+					} else {
+						unsubscribeMailtoAddress = unsubscribeAddresses[1]
+						unsubscribeHttpAddress = unsubscribeAddresses[0]
+					}
+				} else {
+					unsubscribeHttpAddress = unsubscribeAddresses[0]
+				}
+			}
+		}
+
+		// fmt.Printf("\nunsubscribeHttpAddress: %s\nunsubscribeMailtoAddress: %s\n", unsubscribeHttpAddress, unsubscribeMailtoAddress)
+
+		if unsubscribeMailtoAddress != "" {
+			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
+			if err != nil {
+				log.Fatalf("error occurred: %s", err.Error())
+			}
+		} else {
+			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
+			if err != nil {
+				log.Fatalf("error occurred: %s", err.Error())
+			}
+			fmt.Printf("Message body: %v", msg)
 		}
 	}
 }

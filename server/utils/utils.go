@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
 	"os/exec"
 	"runtime"
 )
@@ -21,4 +23,12 @@ func OpenURL(url string) error {
 	args = append(args, url)
 
 	return exec.Command(cmd, args...).Start()
+}
+
+func PrettyPrint(data interface{}) (string, error) {
+	jsonData, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return "", fmt.Errorf("error marshalling json: %v", err.Error())
+	}
+	return fmt.Sprintln(string(jsonData)), nil
 }

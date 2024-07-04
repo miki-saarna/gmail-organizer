@@ -20,12 +20,12 @@ type Client struct {
 	*http.Client
 }
 
-type unsubscribeErrorList struct {
-	address string
-	messageId string
-	mailtoAddress string
-	httpAddress string
-	err error
+type UnsubscribeErrorList struct {
+	Address string
+	MessageId string
+	MailtoAddress string
+	HttpAddress string
+	Err error
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -161,7 +161,7 @@ func InitUnsubscribe(senderAddresses []string) {
 		messages = append(messages, retrievedMessages...)
 	}
 
-	errList := []unsubscribeErrorList{}
+	errList := []UnsubscribeErrorList{}
 	for _, message := range messages {
 		data, err := client.GetOriginalMessageById(message)
 		if err != nil {
@@ -194,20 +194,20 @@ func InitUnsubscribe(senderAddresses []string) {
 			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s", err.Error())
-				e := unsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err}
+				e := UnsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err}
 				errList = append(errList, e)
 			}
 		} else if unsubscribeHttpAddress != "" {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s\n", err.Error())
-				e := unsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
+				e := UnsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
 				errList = append(errList, e)
 			} else {
 				fmt.Printf("Message body: %v", msg)
 			}
 		} else {
-			e := unsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message)}
+			e := UnsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message)}
 			errList = append(errList, e)
 		}
 	}

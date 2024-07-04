@@ -200,7 +200,7 @@ func InitUnsubscribe(senderAddresses []string) {
 		} else {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
-				fmt.Printf("error occurred: %s", err.Error())
+				fmt.Printf("error occurred: %s\n", err.Error())
 				e := unsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
 				errList = append(errList, e)
 			}

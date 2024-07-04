@@ -25,7 +25,7 @@ type UnsubscribeErrorList struct {
 	MessageId string
 	MailtoAddress string
 	HttpAddress string
-	Err error
+	ErrorMessage string
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -194,20 +194,20 @@ func InitUnsubscribe(senderAddresses []string) {
 			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s", err.Error())
-				e := UnsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err}
+				e := UnsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
 			}
 		} else if unsubscribeHttpAddress != "" {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s\n", err.Error())
-				e := UnsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
+				e := UnsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
 			} else {
 				fmt.Printf("Message body: %v", msg)
 			}
 		} else {
-			e := UnsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message)}
+			e := UnsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message).Error()}
 			errList = append(errList, e)
 		}
 	}

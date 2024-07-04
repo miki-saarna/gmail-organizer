@@ -268,7 +268,7 @@ func (c *Client) UnsubscribeByHttpAddress(httpAddress string) (string, error) {
 	var dataInterface interface{}
 	err = json.Unmarshal(data, &dataInterface)
 	if err != nil {
-		return fmt.Sprintf("\n%v\n", data), nil // return string(data), nil
+		return fmt.Sprintf("\n%v\n", string(data)), nil
 	}
 
 	return "\nMay need to manually open link\n", nil

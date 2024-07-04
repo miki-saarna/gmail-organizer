@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tebeka/selenium"
@@ -275,7 +276,7 @@ func (c *Client) UnsubscribeByHttpAddress(httpAddress string) (string, error) {
 }
 
 func (c *Client) UnsubscribeByMailtoAddress(mailtoAddress string) error {
-	address := mailtoAddress[8:len(mailtoAddress) - 1]
+	address := strings.TrimSpace(mailtoAddress)[8:len(mailtoAddress) - 1]
 	method := "POST"
 	url := fmt.Sprintf("%v/messages/send", baseUrl)
 

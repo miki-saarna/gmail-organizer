@@ -197,17 +197,22 @@ func InitUnsubscribe(senderAddresses []string) {
 				e := unsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err}
 				errList = append(errList, e)
 			}
-		} else {
+		} else if unsubscribeHttpAddress != "" {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s\n", err.Error())
 				e := unsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
 				errList = append(errList, e)
+			} else {
+				fmt.Printf("Message body: %v", msg)
 			}
-			fmt.Printf("Message body: %v", msg)
+		} else {
+			e := unsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message)}
+			errList = append(errList, e)
 		}
 	}
-
+	
+	// only if len > 0
 	prettyErrList, err := utils.PrettyPrint(errList)
 	if err != nil {
 		fmt.Printf("Could not implement prettyPrint on errList: %s", err.Error())

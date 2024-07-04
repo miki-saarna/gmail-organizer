@@ -20,6 +20,14 @@ type Client struct {
 	*http.Client
 }
 
+type unsubscribeErrorList struct {
+	address string
+	messageId string
+	mailtoAddress string
+	httpAddress string
+	err error
+}
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
@@ -153,6 +161,7 @@ func InitUnsubscribe(senderAddresses []string) {
 		messages = append(messages, retrievedMessages...)
 	}
 
+	errList := []unsubscribeErrorList{}
 	for _, message := range messages {
 		data, err := client.GetOriginalMessageById(message)
 		if err != nil {
@@ -185,14 +194,26 @@ func InitUnsubscribe(senderAddresses []string) {
 			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s", err.Error())
+				e := unsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err}
+				errList = append(errList, e)
 			}
 		} else {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s", err.Error())
+				e := unsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err}
+				errList = append(errList, e)
 			}
 			fmt.Printf("Message body: %v", msg)
 		}
+	}
+
+	prettyErrList, err := utils.PrettyPrint(errList)
+	if err != nil {
+		fmt.Printf("Could not implement prettyPrint on errList: %s", err.Error())
+		fmt.Printf("\n\nError list: %v", errList)
+	} else {
+		fmt.Printf("\n\nError list: %v", prettyErrList)
 	}
 }
 

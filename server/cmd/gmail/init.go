@@ -212,13 +212,14 @@ func InitUnsubscribe(senderAddresses []string) {
 		}
 	}
 	
-	// only if len > 0
-	prettyErrList, err := utils.PrettyPrint(errList)
-	if err != nil {
-		fmt.Printf("Could not implement prettyPrint on errList: %s", err.Error())
-		fmt.Printf("\n\nError list: %v", errList)
-	} else {
-		fmt.Printf("\n\nError list: %v", prettyErrList)
+	if len(errList) > 0 {
+		prettyErrList, err := utils.PrettyPrint(errList)
+		if err != nil {
+			fmt.Printf("Could not implement prettyPrint on errList: %s", err.Error())
+			fmt.Printf("\n\nError list: %v", errList)
+		} else {
+			fmt.Printf("\n\nError list: %v", prettyErrList)
+		}
 	}
 }
 

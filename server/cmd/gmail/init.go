@@ -256,6 +256,17 @@ func InitUnsubscribe(senderAddresses []string) {
 			fmt.Printf("\n\nSuccessful unsubscribe list: %v", prettyErrList)
 		}
 	}
+
+	errLen := len(errList) + len(possibleErrList)
+	unsubscribeListForWebDriver := make([]string, errLen)
+	for idx, item := range errList {
+		unsubscribeListForWebDriver[idx] = item.Address
+	}
+	for idx, item := range possibleErrList {
+		unsubscribeListForWebDriver[len(possibleErrList) + idx] = item.Address
+	}
+
+	InitUnsubscribeWithWebDriver(unsubscribeListForWebDriver)
 }
 
 func main() (*Client, *gmail.Service) {

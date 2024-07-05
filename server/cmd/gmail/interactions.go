@@ -189,8 +189,12 @@ func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 		xpath = `//button[contains(text(), 'Unsubscribe')]`
 		elem, err = wd.FindElement(selenium.ByXPATH, xpath)
 		if err != nil {
-			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" button element for message ID %s: %s", msgId, err.Error()))
-			continue
+			xpath = `//button[contains(text(), 'Go to website')]`
+			elem, err = wd.FindElement(selenium.ByXPATH, xpath)
+			if err != nil {	
+				failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" or \"Go to website\" button element for message ID %s: %s", msgId, err.Error()))
+				continue
+			}
 		}
 
 		if err := elem.Click(); err != nil {

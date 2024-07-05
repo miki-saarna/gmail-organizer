@@ -169,6 +169,7 @@ func InitUnsubscribe(senderAddresses []string) {
 		}
 	}
 
+	successfulUnsubscribeList := []string{}
 	possibleErrList := []UnsubscribeErrorList{}
 	errList := []UnsubscribeErrorList{}
 
@@ -206,6 +207,8 @@ func InitUnsubscribe(senderAddresses []string) {
 				fmt.Printf("error occurred: %s", err.Error())
 				e := UnsubscribeErrorList{message.sender, message.id, unsubscribeMailtoAddress, unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
+			} else {
+				successfulUnsubscribeList = append(successfulUnsubscribeList, message.sender)
 			}
 		} else if unsubscribeHttpAddress != "" {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
@@ -241,6 +244,16 @@ func InitUnsubscribe(senderAddresses []string) {
 			fmt.Printf("\n\nError list: %v", errList)
 		} else {
 			fmt.Printf("\n\nError list: %v", prettyErrList)
+		}
+	}
+
+	if len(successfulUnsubscribeList) > 0 {
+		prettyErrList, err := utils.PrettyPrint(successfulUnsubscribeList)
+		if err != nil {
+			fmt.Printf("Could not implement prettyPrint on successfulUnsubscribeList: %s", err.Error())
+			fmt.Printf("\n\nSuccessful unsubscribe list: %v", errList)
+		} else {
+			fmt.Printf("\n\nSuccessful unsubscribe list: %v", prettyErrList)
 		}
 	}
 }

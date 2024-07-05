@@ -177,24 +177,24 @@ func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 		xpath := `//span[contains(@class, 'Ca') and contains(text(), 'Unsubscribe')]`
 		elem, err := wd.FindElement(selenium.ByXPATH, xpath)
 		if err != nil {
-			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Subscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" span element for message ID %s: %s", msgId, err.Error()))
 			continue
 		}
 
 		if err := elem.Click(); err != nil {
-			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Subscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Unsubscribe\" span element for message ID %s: %s", msgId, err.Error()))
 			continue
 		}
 
 		xpath = `//button[contains(text(), 'Unsubscribe')]`
 		elem, err = wd.FindElement(selenium.ByXPATH, xpath)
 		if err != nil {
-			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Subscribe\" button element for message ID %s: %s", msgId, err.Error()))
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" button element for message ID %s: %s", msgId, err.Error()))
 			continue
 		}
 
 		if err := elem.Click(); err != nil {
-			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Subscribe\" button element for message ID %s: %s", msgId, err.Error()))
+			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Unsubscribe\" button element for message ID %s: %s", msgId, err.Error()))
 			continue
 		}
 

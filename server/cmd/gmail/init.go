@@ -228,9 +228,9 @@ func InitUnsubscribe(senderAddresses []string) {
 		prettyErrList, err := utils.PrettyPrint(possibleErrList)
 		if err != nil {
 			fmt.Printf("Could not implement prettyPrint on possibleErrList: %s", err.Error())
-			fmt.Printf("\n\nError list: %v", possibleErrList)
+			fmt.Printf("\n\nPossible error list: %v", possibleErrList)
 		} else {
-			fmt.Printf("\n\nError list: %v", prettyErrList)
+			fmt.Printf("\n\nPossible error list: %v", prettyErrList)
 		}
 	}
 	

@@ -20,6 +20,11 @@ type Client struct {
 	*http.Client
 }
 
+type UnsubscribeMessage struct {
+	sender string
+	id string
+}
+
 type UnsubscribeErrorList struct {
 	Address string
 	MessageId string
@@ -151,21 +156,24 @@ func InitUnsubscribeWithWebDriver(senderAddresses []string) {
 func InitUnsubscribe(senderAddresses []string) {
 	client, _ := main()
 
-	var messages []string
+	var messages []UnsubscribeMessage
 
 	for _, senderAddress := range senderAddresses {
 		retrievedMessages, err := client.ListMessagesFromSender([]string{senderAddress}, 1)
 		if err != nil {
 			fmt.Printf("Could not successfully retrieve email from %s: %v", senderAddress, err.Error())
 		}
-		messages = append(messages, retrievedMessages...)
+
+		if len(retrievedMessages) == 1 {
+			messages = append(messages, UnsubscribeMessage{senderAddress, retrievedMessages[0]})
+		}
 	}
 
 	possibleErrList := []UnsubscribeErrorList{}
 	errList := []UnsubscribeErrorList{}
 
 	for _, message := range messages {
-		data, err := client.GetOriginalMessageById(message)
+		data, err := client.GetOriginalMessageById(message.id)
 		if err != nil {
 			log.Fatalf("error occurred: %v", err.Error())
 		}
@@ -196,22 +204,22 @@ func InitUnsubscribe(senderAddresses []string) {
 			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s", err.Error())
-				e := UnsubscribeErrorList{"", message, unsubscribeMailtoAddress, unsubscribeHttpAddress, err.Error()}
+				e := UnsubscribeErrorList{message.sender, message.id, unsubscribeMailtoAddress, unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
 			}
 		} else if unsubscribeHttpAddress != "" {
 			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
 			if err != nil {
 				fmt.Printf("error occurred: %s\n", err.Error())
-				e := UnsubscribeErrorList{"", message, "", unsubscribeHttpAddress, err.Error()}
+				e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
 			} else {
 				fmt.Printf("Message body: %v", msg)
-				e := UnsubscribeErrorList{"", message, "", unsubscribeHttpAddress, fmt.Sprintf("An error may or may not have occurred: %v", msg)}
+				e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("An error may or may not have occurred: %v", msg)}
 				possibleErrList = append(possibleErrList, e)
 			}
 		} else {
-			e := UnsubscribeErrorList{"", message, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message).Error()}
+			e := UnsubscribeErrorList{message.sender, message.id, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message).Error()}
 			errList = append(errList, e)
 		}
 	}

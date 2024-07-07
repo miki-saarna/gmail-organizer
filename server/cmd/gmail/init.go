@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gmail-organizer/cmd/gpt"
 	"gmail-organizer/utils"
 	"log"
 	"net/http"
@@ -23,6 +24,14 @@ type Client struct {
 type UnsubscribeMessage struct {
 	sender string
 	id string
+}
+
+type UnsubscribeSuccessList struct {
+	Address string
+	MessageId string
+	MailtoAddress string
+	HttpAddress string
+	SuccessMessage string
 }
 
 type UnsubscribeErrorList struct {
@@ -170,7 +179,7 @@ func InitUnsubscribe(senderAddresses []string) {
 	}
 
 	successfulUnsubscribeList := []string{}
-	possibleErrList := []UnsubscribeErrorList{}
+	successList := []UnsubscribeSuccessList{}
 	errList := []UnsubscribeErrorList{}
 
 	for _, message := range messages {
@@ -217,23 +226,20 @@ func InitUnsubscribe(senderAddresses []string) {
 				e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, err.Error()}
 				errList = append(errList, e)
 			} else {
-				fmt.Printf("Message body: %v", msg)
-				e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("An error may or may not have occurred: %v", msg)}
-				possibleErrList = append(possibleErrList, e)
+				// fmt.Printf("Message body: %v", msg)
+
+				unsubscribed := gpt.DetermineUnsubscribeStatus(msg)
+				if unsubscribed == "true" {
+					success := UnsubscribeSuccessList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("Successfully unsubscribed: %v", msg)}
+					successList = append(successList, success)
+				} else {
+					e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("An error may or may not have occurred: %v", msg)}
+					errList = append(errList, e)
+				}
 			}
 		} else {
 			e := UnsubscribeErrorList{message.sender, message.id, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message).Error()}
 			errList = append(errList, e)
-		}
-	}
-	
-	if len(possibleErrList) > 0 {
-		prettyErrList, err := utils.PrettyPrint(possibleErrList)
-		if err != nil {
-			fmt.Printf("Could not implement prettyPrint on possibleErrList: %s", err.Error())
-			fmt.Printf("\n\nPossible error list: %v", possibleErrList)
-		} else {
-			fmt.Printf("\n\nPossible error list: %v", prettyErrList)
 		}
 	}
 	
@@ -247,6 +253,16 @@ func InitUnsubscribe(senderAddresses []string) {
 		}
 	}
 
+	if len(successList) > 0 {
+		prettySuccessList, err := utils.PrettyPrint(successList)
+		if err != nil {
+			fmt.Printf("Could not implement prettyPrint on successList: %s", err.Error())
+			fmt.Printf("\n\nSuccess list: %v", successList)
+		} else {
+			fmt.Printf("\n\nSuccess list: %v", prettySuccessList)
+		}
+	}
+
 	if len(successfulUnsubscribeList) > 0 {
 		prettyErrList, err := utils.PrettyPrint(successfulUnsubscribeList)
 		if err != nil {
@@ -257,13 +273,10 @@ func InitUnsubscribe(senderAddresses []string) {
 		}
 	}
 
-	errLen := len(errList) + len(possibleErrList)
+	errLen := len(errList)
 	unsubscribeListForWebDriver := make([]string, errLen)
 	for idx, item := range errList {
 		unsubscribeListForWebDriver[idx] = item.Address
-	}
-	for idx, item := range possibleErrList {
-		unsubscribeListForWebDriver[len(possibleErrList) + idx] = item.Address
 	}
 
 	InitUnsubscribeWithWebDriver(unsubscribeListForWebDriver)

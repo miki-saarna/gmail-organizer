@@ -23,7 +23,7 @@ func DetermineUnsubscribeStatus(message string) string {
 
 	req := openai.ChatCompletionRequest{
 		Model:     openai.GPT3Dot5Turbo,
-		MaxTokens: 5,
+		MaxTokens: 1,
 		Messages:    []openai.ChatCompletionMessage{
 			{
 				Role: "system",

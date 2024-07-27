@@ -243,7 +243,7 @@ func (c *Client) attemptUnsubscribeWithGoogleApi(unsubscribeMailtoAddress string
 			}
 		}
 	} else {
-		return fmt.Errorf("could not unsubscribe %s from through Google API.", sender)
+		return fmt.Errorf("could not unsubscribe %s from through Google API", sender)
 	}
 	return nil
 }

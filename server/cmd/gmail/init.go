@@ -178,18 +178,18 @@ func InitUnsubscribe(senderAddresses []string) {
 		}
 	}
 
-	successfulUnsubscribeList := []string{}
-	successList := []UnsubscribeSuccessList{}
-	errList := []UnsubscribeErrorList{}
+	var successfulUnsubscribeList, webDriverUnsubscribeList, blockList []string
 
 	for _, message := range messages {
+
+		// retrieve basic info regarding current sender
 		data, err := client.GetOriginalMessageById(message.id)
 		if err != nil {
 			log.Fatalf("error occurred: %v", err.Error())
 		}
 		headersList := data.Payload.Headers
 
-		var unsubscribeHttpAddress, unsubscribeMailtoAddress string
+		var unsubscribeMailtoAddress, unsubscribeHttpAddress string
 
 		for _, header := range headersList {
 			if header.Name == "List-Unsubscribe" {
@@ -208,79 +208,47 @@ func InitUnsubscribe(senderAddresses []string) {
 			}
 		}
 
-		// fmt.Printf("\nunsubscribeHttpAddress: %s\nunsubscribeMailtoAddress: %s\n", unsubscribeHttpAddress, unsubscribeMailtoAddress)
-
-		if unsubscribeMailtoAddress != "" {
-			err := client.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
-			if err != nil {
-				fmt.Printf("error occurred: %s", err.Error())
-				e := UnsubscribeErrorList{message.sender, message.id, unsubscribeMailtoAddress, unsubscribeHttpAddress, err.Error()}
-				errList = append(errList, e)
-			} else {
-				successfulUnsubscribeList = append(successfulUnsubscribeList, message.sender)
-			}
-		} else if unsubscribeHttpAddress != "" {
-			msg, err := client.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
-			if err != nil {
-				fmt.Printf("error occurred: %s\n", err.Error())
-				e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, err.Error()}
-				errList = append(errList, e)
-			} else {
-				// fmt.Printf("Message body: %v", msg)
-
-				unsubscribed := gpt.DetermineUnsubscribeStatus(msg)
-				if unsubscribed == "true" {
-					success := UnsubscribeSuccessList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("Successfully unsubscribed: %v", msg)}
-					successList = append(successList, success)
-				} else {
-					e := UnsubscribeErrorList{message.sender, message.id, "", unsubscribeHttpAddress, fmt.Sprintf("An error may or may not have occurred: %v", msg)}
-					errList = append(errList, e)
-				}
-			}
+		// after obtaining basic info, attempt to unsubscribe
+		err = client.attemptUnsubscribeWithGoogleApi(unsubscribeMailtoAddress, unsubscribeHttpAddress, message.sender)
+		if err != nil {
+			webDriverUnsubscribeList = append(webDriverUnsubscribeList, message.sender)
 		} else {
-			e := UnsubscribeErrorList{message.sender, message.id, "", "", fmt.Errorf("headers of message ID %s does not contain \"List-Unsubscribe\" header", message).Error()}
-			errList = append(errList, e)
+			successfulUnsubscribeList = append(successfulUnsubscribeList, message.sender)
 		}
 	}
+		
+	InitUnsubscribeWithWebDriver(webDriverUnsubscribeList) // obtain blockList if unsuccessful
+
+	fmt.Printf("\nInitiating blocking of following email address: %v", blockList)
+	InitTrashListUpdate(blockList);
 	
-	if len(errList) > 0 {
-		prettyErrList, err := utils.PrettyPrint(errList)
-		if err != nil {
-			fmt.Printf("Could not implement prettyPrint on errList: %s", err.Error())
-			fmt.Printf("\n\nError list: %v", errList)
-		} else {
-			fmt.Printf("\n\nError list: %v", prettyErrList)
-		}
-	}
-
-	if len(successList) > 0 {
-		prettySuccessList, err := utils.PrettyPrint(successList)
-		if err != nil {
-			fmt.Printf("Could not implement prettyPrint on successList: %s", err.Error())
-			fmt.Printf("\n\nSuccess list: %v", successList)
-		} else {
-			fmt.Printf("\n\nSuccess list: %v", prettySuccessList)
-		}
-	}
-
-	if len(successfulUnsubscribeList) > 0 {
-		prettyErrList, err := utils.PrettyPrint(successfulUnsubscribeList)
-		if err != nil {
-			fmt.Printf("Could not implement prettyPrint on successfulUnsubscribeList: %s", err.Error())
-			fmt.Printf("\n\nSuccessful unsubscribe list: %v", errList)
-		} else {
-			fmt.Printf("\n\nSuccessful unsubscribe list: %v", prettyErrList)
-		}
-	}
-
-	errLen := len(errList)
-	unsubscribeListForWebDriver := make([]string, errLen)
-	for idx, item := range errList {
-		unsubscribeListForWebDriver[idx] = item.Address
-	}
-
-	InitUnsubscribeWithWebDriver(unsubscribeListForWebDriver)
+	fmt.Printf("\nSuccessfully unsubscribed from the following email addresses: %v", successfulUnsubscribeList)
 }
+
+func (c *Client) attemptUnsubscribeWithGoogleApi(unsubscribeMailtoAddress string, unsubscribeHttpAddress string, sender string) error {
+	if unsubscribeMailtoAddress != "" {
+		err := c.UnsubscribeByMailtoAddress(unsubscribeMailtoAddress)
+		if err != nil {
+			c.attemptUnsubscribeWithGoogleApi("", unsubscribeHttpAddress, sender)
+		}
+	} else if unsubscribeHttpAddress != "" {
+		msg, err := c.UnsubscribeByHttpAddress(unsubscribeHttpAddress)
+		if err != nil {
+			c.attemptUnsubscribeWithGoogleApi("", "", sender)
+		} else {
+			unsubscribed := gpt.DetermineUnsubscribeStatus(msg)
+			fmt.Printf("unsubscribed status: %v", unsubscribed)
+			if unsubscribed != "true" {
+				c.attemptUnsubscribeWithGoogleApi("", "", sender)
+			}
+		}
+	} else {
+		return fmt.Errorf("could not unsubscribe %s from through Google API.", sender)
+	}
+	return nil
+}
+
+
 
 func main() (*Client, *gmail.Service) {
 	ctx := context.Background()

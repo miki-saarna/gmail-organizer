@@ -248,8 +248,6 @@ func (c *Client) attemptUnsubscribeWithGoogleApi(unsubscribeMailtoAddress string
 	return nil
 }
 
-
-
 func main() (*Client, *gmail.Service) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")

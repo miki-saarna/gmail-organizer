@@ -155,17 +155,46 @@ func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 
 	capabilities["goog:chromeOptions"] = map[string]interface{}{
 		"args": chromeArgs,
+		"detach": true,
 	}
+
+	closeBrowser := true
 
 	wd, err := selenium.NewRemote(capabilities, fmt.Sprintf("http://localhost:%d/wd/hub", portInt))
 	if err != nil {
 		return fmt.Errorf("error connecting to WebDriver server: %s", err.Error())
 	}
-	defer wd.Quit()
+	defer func() {
+		if closeBrowser {
+			wd.Quit()
+		}
+	}()
 
 	var failedMsgIds []string
+	newTabs := 0
 
-	for _, msgId := range msgIds {
+	for idx, msgId := range msgIds {
+		var windowHandles []string
+		var newTabHandle string
+
+		initialTabCount := len(windowHandles)
+
+		_, err := wd.ExecuteScript("window.open('about:blank','_blank');", nil)
+		if err != nil {
+			return fmt.Errorf("error opening new tab: %s", err.Error())
+		}
+		
+		// Switch to the new tab
+		windowHandles, err = wd.WindowHandles()
+		if err != nil {
+			return fmt.Errorf("error getting window handles: %s", err.Error())
+		}
+		
+		newTabHandle = windowHandles[len(windowHandles)-1]
+		if err := wd.SwitchWindow(newTabHandle); err != nil {
+			return fmt.Errorf("error switching to new tab: %s", err.Error())
+		}
+
 		messageUrl := fmt.Sprintf("https://mail.google.com/mail/u/0/#inbox/%s", msgId)
 		if err := wd.Get(messageUrl); err != nil {
 			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error navigating to URL for message ID %s: %s", msgId, err.Error()))
@@ -178,11 +207,13 @@ func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 		elem, err := wd.FindElement(selenium.ByXPATH, xpath)
 		if err != nil {
 			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			closeBrowser = false
 			continue
 		}
 
 		if err := elem.Click(); err != nil {
 			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Unsubscribe\" span element for message ID %s: %s", msgId, err.Error()))
+			closeBrowser = false
 			continue
 		}
 
@@ -192,17 +223,55 @@ func (c *Client) UnsubscribeWithWebDriver(msgIds []string) error {
 			xpath = `//button[contains(text(), 'Go to website')]`
 			elem, err = wd.FindElement(selenium.ByXPATH, xpath)
 			if err != nil {	
-				failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" or \"Go to website\" button element for message ID %s: %s", msgId, err.Error()))
+				failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to find \"Unsubscribe\" or \"Go to website\" button element for message ID %s: %s", msgId, err.Error())) // should probably split the logic into 2 separate conditions
+				closeBrowser = false
 				continue
 			}
 		}
 
 		if err := elem.Click(); err != nil {
 			failedMsgIds = append(failedMsgIds, fmt.Sprintf("error trying to click \"Unsubscribe\" button element for message ID %s: %s", msgId, err.Error()))
+			closeBrowser = false
 			continue
 		}
 
 		time.Sleep(2 * time.Second)
+
+		windowHandles, err = wd.WindowHandles()
+		if err != nil {
+			return fmt.Errorf("error getting window handles: %s", err.Error())
+		}
+		currentTabCount := len(windowHandles)
+		if initialTabCount != currentTabCount {
+			newTabs += 1
+
+			_, err = wd.ExecuteScript("window.close();", nil)
+			if err != nil {
+					return fmt.Errorf("error closing tab: %s", err.Error())
+			} else {
+				windowHandles, err = wd.WindowHandles()
+				if err != nil {
+					return fmt.Errorf("error getting window handles: %s", err.Error())
+				}
+			}	
+		}
+
+		var switchToTab string
+		if idx == len(msgIds) - 1 {
+			switchToTab = windowHandles[0]
+			if err := wd.SwitchWindow(switchToTab); err != nil {
+				return fmt.Errorf("error switching back to original tab: %s", err.Error())
+			}
+
+			_, err = wd.ExecuteScript("window.close();", nil)
+			if err != nil {
+					return fmt.Errorf("error closing tab: %s", err.Error())
+			}
+		} else {
+			if err := wd.SwitchWindow(windowHandles[len(windowHandles) - 1 - newTabs]); err != nil {
+				return fmt.Errorf("error switching back to original tab: %s", err.Error())
+			}
+		}
 	}
 
 	if len(failedMsgIds) > 0 {
@@ -305,7 +374,6 @@ func (c *Client) UnsubscribeByMailtoAddress(mailtoAddress string) error {
 		return &requestExecutionError{method, url, err.Error()}
 	}
 
-	fmt.Printf("Successfully sent unsubscribe request email to: %s\n", address)
 	return nil
 }
 
